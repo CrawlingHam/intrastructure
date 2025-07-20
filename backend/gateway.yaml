@@ -1,0 +1,43 @@
+services:
+    api-gateway:
+        container_name: api-gateway
+        mem_reservation: 128M
+        image: api-gateway
+        mem_limit: 256M
+        cpus: 1.0
+        build:
+            context: ../../backend/gateway
+            dockerfile: Dockerfile
+            args:
+                - MAINTAINER=${EMAIL}
+        environment:
+            - ALLOWED_ORIGINS=api.${HOSTNAME}
+            - SERVER_DOMAIN=[::]:8080
+        networks:
+            - backend-network
+            - traefik-network
+        healthcheck:
+            test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+            start_period: 10s
+            interval: 10s
+            timeout: 5s
+            retries: 3
+        labels:
+            # Enable Traefik
+            - "traefik.enable=true"
+
+            # Service configuration
+            - "traefik.http.services.api-gateway.loadbalancer.server.port=8080"
+
+            # Single catch-all API router (handles all api.mydomain.com requests)
+            - "traefik.http.routers.api-gateway.middlewares=global-security,backend-rate-limit,timeout,global-compress,backend-cors,backend-security"
+            - "traefik.http.routers.api-gateway.rule=Host(`api.${HOSTNAME}`)"
+            - "traefik.http.routers.api-gateway.tls.certresolver=myresolver"
+            - "traefik.http.routers.api-gateway.entrypoints=web,websecure"
+            - "traefik.http.routers.api-gateway.service=api-gateway"
+            - "traefik.http.routers.api-gateway.tls=true"
+
+            # API-specific compression
+            - "traefik.http.middlewares.api-gateway-compress.compress.includedcontenttypes=application/json,application/xml,text/plain"
+            - "traefik.http.middlewares.api-gateway-compress.compress.excludedcontenttypes=text/event-stream"
+            - "traefik.http.middlewares.api-gateway-compress.compress=true"

@@ -1,0 +1,61 @@
+services:
+    navigationbar-react:
+        container_name: navigationbar-react
+        image: navigationbar-react
+        mem_reservation: 256M
+        read_only: false
+        mem_limit: 512M
+        cpus: 1.0
+        build:
+            context: ../../frontend/navigationbars/react
+            dockerfile: Dockerfile
+        networks:
+            - frontend-network
+            - traefik-network
+        healthcheck:
+            test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+            start_period: 10s
+            interval: 10s
+            timeout: 5s
+            retries: 3
+        labels:
+            # Enable Traefik
+            - "traefik.enable=true"
+
+            # Service
+            - "traefik.http.services.navigationbar-react.loadbalancer.server.port=80"
+
+            # Path stripping middleware
+            - "traefik.http.middlewares.navigationbar-react-stripprefix.stripprefix.prefixes=/navigationbar/react"
+
+            # Static assets handling
+            - "traefik.http.routers.navigationbar-react-assets.middlewares=navigationbar-react-assets-stripprefix,navigationbar-react-assets-cache,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.middlewares.navigationbar-react-assets-cache.headers.customResponseHeaders.Cache-Control=no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+            - "traefik.http.routers.navigationbar-react-assets.rule=Host(`${HOSTNAME}`) && PathPrefix(`/navigationbar/react/assets/`)"
+            - "traefik.http.middlewares.navigationbar-react-assets-stripprefix.stripprefix.prefixes=/navigationbar/react"
+            - "traefik.http.routers.navigationbar-react-assets.tls.certresolver=myresolver"
+            - "traefik.http.routers.navigationbar-react-assets.entrypoints=websecure"
+            - "traefik.http.routers.navigationbar-react-assets.tls=true"
+
+            # SPA fallback handling
+            - "traefik.http.routers.navigationbar-react-spa.rule=Host(`${HOSTNAME}`) && PathPrefix(`/navigationbar/react`) && !PathPrefix(`/navigationbar/react/assets/`) && !Path(`/navigationbar/react/health`)"
+            - "traefik.http.routers.navigationbar-react-spa.middlewares=navigationbar-react-spa-stripprefix,navigationbar-react-spa-cache,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.middlewares.navigationbar-react-spa-cache.headers.customResponseHeaders.Cache-Control=no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+            - "traefik.http.middlewares.navigationbar-react-spa-stripprefix.stripprefix.prefixes=/navigationbar/react"
+            - "traefik.http.routers.navigationbar-react-spa.tls.certresolver=myresolver"
+            - "traefik.http.routers.navigationbar-react-spa.entrypoints=websecure"
+            - "traefik.http.routers.navigationbar-react-spa.tls=true"
+
+            # Health check endpoint with proper Content-Type
+            - "traefik.http.routers.navigationbar-react-health.middlewares=navigationbar-react-health-stripprefix,navigationbar-react-health-headers,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.middlewares.navigationbar-react-health-headers.headers.customResponseHeaders.Content-Type=text/plain"
+            - "traefik.http.routers.navigationbar-react-health.rule=Host(`${HOSTNAME}`) && Path(`/navigationbar/react/health`)"
+            - "traefik.http.middlewares.navigationbar-react-health-stripprefix.stripprefix.prefixes=/navigationbar/react"
+            - "traefik.http.routers.navigationbar-react-health.tls.certresolver=myresolver"
+            - "traefik.http.routers.navigationbar-react-health.entrypoints=web"
+            - "traefik.http.routers.navigationbar-react-health.tls=true"
+
+            # Enhanced compression with specific MIME types
+            - "traefik.http.middlewares.navigationbar-react-compress.compress.includedcontenttypes=text/plain,text/css,text/xml,application/json,application/javascript,application/xml+rss,application/atom+xml,image/svg+xml"
+            - "traefik.http.middlewares.navigationbar-react-compress.compress.excludedcontenttypes=text/event-stream"
+            - "traefik.http.middlewares.navigationbar-react-compress.compress=true"

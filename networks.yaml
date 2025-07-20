@@ -1,0 +1,13 @@
+networks:
+    frontend-network:
+        name: frontend-network
+        driver: bridge
+        internal: false
+    backend-network:
+        name: backend-network
+        driver: bridge
+        internal: true
+    traefik-network:
+        name: traefik-network
+        driver: bridge
+        internal: false

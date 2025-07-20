@@ -1,0 +1,49 @@
+services:
+    authentication-api:
+        container_name: authentication-api
+        image: authentication-api
+        mem_reservation: 256M
+        mem_limit: 512M
+        cpus: 1.0
+        build:
+            context: ../../backend/authentication
+            dockerfile: Dockerfile
+            args:
+                - MAINTAINER=${EMAIL}
+        environment:
+            - FIREBASE_CLIENT_CREDENTIALS_PATH=/run/secrets/firebase_client_credentials
+            - FIREBASE_ADMIN_CREDENTIALS_PATH=/run/secrets/firebase_admin_credentials
+            - SPOTIFY_CREDENTIALS_PATH=/run/secrets/spotify_credentials
+            - AWS_SES_CREDENTIALS_PATH=/run/secrets/aws_ses_credentials
+            - REDIS_CREDENTIALS_PATH=/run/secrets/redis_credentials
+            - ALLOWED_ORIGINS=api.${HOSTNAME}
+            - COMPANY_NAME=${COMPANY_NAME}
+            - COOKIE_DOMAIN=${HOSTNAME}
+            - SERVER_DOMAIN=[::]:8000
+        networks:
+            - backend-network
+            - traefik-network
+        secrets:
+            - firebase_client_credentials
+            - firebase_admin_credentials
+            - spotify_credentials
+            - aws_ses_credentials
+            - redis_credentials
+        healthcheck:
+            test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8000/health"]
+            start_period: 10s
+            interval: 10s
+            timeout: 5s
+            retries: 3
+
+secrets:
+    firebase_admin_credentials:
+        file: ./secrets/firebase/adminCredentials.json
+    firebase_client_credentials:
+        file: ./secrets/firebase/clientCredentials.json
+    redis_credentials:
+        file: ./secrets/redis/credentials.json
+    aws_ses_credentials:
+        file: ./secrets/aws/sesCredentials.json
+    spotify_credentials:
+        file: ./secrets/spotify/credentials.json

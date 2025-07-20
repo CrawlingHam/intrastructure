@@ -1,0 +1,63 @@
+services:
+    authentication-app:
+        container_name: authentication-app
+        image: authentication-app
+        mem_reservation: 256M
+        read_only: true
+        mem_limit: 512M
+        cpus: 1.0
+        build:
+            context: ../../frontend/authentication
+            dockerfile: Dockerfile
+            args:
+                - HOSTNAME=${HOSTNAME}
+        networks:
+            - frontend-network
+            - traefik-network
+        healthcheck:
+            test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+            start_period: 10s
+            interval: 10s
+            timeout: 5s
+            retries: 3
+        labels:
+            # Enable Traefik
+            - "traefik.enable=true"
+
+            # Service
+            - "traefik.http.services.authentication-app.loadbalancer.server.port=80"
+
+            # Path stripping middleware
+            - "traefik.http.middlewares.authentication-app-stripprefix.stripprefix.prefixes=/auth"
+
+            # Static assets handling
+            - "traefik.http.routers.authentication-app-assets.middlewares=authentication-app-assets-stripprefix,authentication-app-assets-cache,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.middlewares.authentication-app-assets-cache.headers.customResponseHeaders.Cache-Control=no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+            - "traefik.http.routers.authentication-app-assets.rule=Host(`${HOSTNAME}`) && PathPrefix(`/auth/assets/`)"
+            - "traefik.http.middlewares.authentication-app-assets-stripprefix.stripprefix.prefixes=/auth"
+            - "traefik.http.routers.authentication-app-assets.tls.certresolver=myresolver"
+            - "traefik.http.routers.authentication-app-assets.entrypoints=websecure"
+            - "traefik.http.routers.authentication-app-assets.tls=true"
+
+            # SPA fallback handling
+            - "traefik.http.routers.authentication-app-spa.middlewares=authentication-app-spa-stripprefix,authentication-app-spa-cache,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.middlewares.authentication-app-spa-cache.headers.customResponseHeaders.Cache-Control=no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+            - "traefik.http.routers.authentication-app-spa.rule=Host(`${HOSTNAME}`) && PathPrefix(`/auth`) && !PathPrefix(`/auth/assets/`) && !Path(`/auth/health`)"
+            - "traefik.http.middlewares.authentication-app-spa-stripprefix.stripprefix.prefixes=/auth"
+            - "traefik.http.routers.authentication-app-spa.tls.certresolver=myresolver"
+            - "traefik.http.routers.authentication-app-spa.entrypoints=websecure"
+            - "traefik.http.routers.authentication-app-spa.tls=true"
+
+            # Health check endpoint with proper Content-Type
+            - "traefik.http.routers.authentication-app-health.middlewares=authentication-app-health-stripprefix,authentication-app-health-headers,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.middlewares.authentication-app-health-headers.headers.customResponseHeaders.Content-Type=text/plain"
+            - "traefik.http.routers.authentication-app-health.rule=Host(`${HOSTNAME}`) && Path(`/auth/health`)"
+            - "traefik.http.middlewares.authentication-app-health-stripprefix.stripprefix.prefixes=/auth"
+            - "traefik.http.routers.authentication-app-health.tls.certresolver=myresolver"
+            - "traefik.http.routers.authentication-app-health.entrypoints=web"
+            - "traefik.http.routers.authentication-app-health.tls=true"
+
+            # Enhanced compression with specific MIME types
+            - "traefik.http.middlewares.authentication-app-compress.compress.includedcontenttypes=text/plain,text/css,text/xml,application/json,application/javascript,application/xml+rss,application/atom+xml,image/svg+xml"
+            - "traefik.http.middlewares.authentication-app-compress.compress.excludedcontenttypes=text/event-stream"
+            - "traefik.http.middlewares.authentication-app-compress.compress=true"

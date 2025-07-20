@@ -1,0 +1,99 @@
+services:
+    traefik-proxy:
+        container_name: traefik-proxy
+        image: traefik:v3.3.6
+        command:
+            # Security and timeout settings
+            - "--serversTransport.forwardingTimeouts.responseHeaderTimeout=5s"
+            - "--serversTransport.forwardingTimeouts.idleConnTimeout=90s"
+            - "--serversTransport.forwardingTimeouts.dialTimeout=5s"
+
+            # Entry points
+            - "--entryPoints.websecure.forwardedHeaders.insecure=false"
+            - "--entryPoints.web.forwardedHeaders.insecure=false"
+            - "--entrypoints.websecure.address=:443"
+            - "--entrypoints.web.address=:80"
+
+            # Provider settings
+            - "--providers.docker.exposedbydefault=false"
+            - "--providers.docker.network=traefik-network"
+            - "--providers.docker=true"
+
+            # API settings - SECURE FOR PRODUCTION
+            - "--api.insecure=false"
+            - "--api.dashboard=true"
+            - "--api.debug=false"
+            - "--ping=true"
+
+            # Logging
+            - "--log.level=INFO"
+            - "--accesslog=true"
+            - "--accesslog.fields.headers.names.X-Forwarded-For=keep"
+            - "--accesslog.fields.headers.names.X-Real-IP=keep"
+            - "--accesslog.fields.headers.names.User-Agent=keep"
+
+            # Security headers
+            - "--entrypoints.websecure.http.redirections.entrypoint.permanent=true"
+            - "--entrypoints.websecure.http.redirections.entrypoint.to=websecure"
+            - "--entrypoints.websecure.http.redirections.entrypoint.scheme=https"
+
+            # Enable automatic HTTPS with Cloudflare DNS
+            - "--certificatesresolvers.myresolver.acme.dnschallenge.provider=cloudflare"
+            - "--certificatesresolvers.myresolver.acme.dnschallenge.delaybeforecheck=0"
+            - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+            - "--certificatesresolvers.myresolver.acme.dnschallenge=true"
+            - "--certificatesresolvers.myresolver.acme.email=${EMAIL}"
+        environment:
+            - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - ./letsencrypt:/letsencrypt
+        networks:
+            - frontend-network
+            - traefik-network
+            - backend-network
+        labels:
+            # Global security headers middleware
+            - "traefik.http.middlewares.global-security.headers.customrequestheaders.Permissions-Policy=geolocation=(), microphone=(), camera=(), payment=(), usb=(), interest-cohort=(), browsing-topics=()"
+            - "traefik.http.middlewares.global-security.headers.customrequestheaders.Strict-Transport-Security=max-age=31536000; includeSubDomains; preload"
+            - "traefik.http.middlewares.global-security.headers.customrequestheaders.Referrer-Policy=strict-origin-when-cross-origin"
+            - "traefik.http.middlewares.global-security.headers.customrequestheaders.Cross-Origin-Embedder-Policy=require-corp"
+            - "traefik.http.middlewares.global-security.headers.customrequestheaders.Cross-Origin-Resource-Policy=same-origin"
+            - "traefik.http.middlewares.global-security.headers.customrequestheaders.X-Permitted-Cross-Domain-Policies=none"
+            - "traefik.http.middlewares.global-security.headers.customrequestheaders.Cross-Origin-Opener-Policy=same-origin"
+            - "traefik.http.middlewares.global-security.headers.customrequestheaders.X-XSS-Protection=1; mode=block"
+            - "traefik.http.middlewares.global-security.headers.customrequestheaders.X-Content-Type-Options=nosniff"
+            - "traefik.http.middlewares.global-security.headers.customrequestheaders.X-Download-Options=noopen"
+            - "traefik.http.middlewares.global-security.headers.customrequestheaders.Origin-Agent-Cluster=?1"
+            - "traefik.http.middlewares.global-security.headers.customrequestheaders.X-Frame-Options=DENY"
+
+            # DDoS protection middleware
+            - "traefik.http.middlewares.ddos-protection.headers.customrequestheaders.X-Forwarded-For=${DOMAIN}"
+            - "traefik.http.middlewares.ddos-protection.headers.customrequestheaders.X-Real-IP=${DOMAIN}"
+
+            # Trust headers middleware
+            - "traefik.http.middlewares.trust-headers.headers.customrequestheaders.X-Forwarded-Host=${HOSTNAME}"
+            - "traefik.http.middlewares.trust-headers.headers.customrequestheaders.X-Real-IP=${HOSTNAME}"
+
+            # Timeout middleware
+            - "traefik.http.middlewares.timeout.headers.customResponseHeaders.X-Gateway-Timeout=30"
+
+            # Compression middleware
+            - "traefik.http.middlewares.global-compress.compress.excludedcontenttypes=text/event-stream"
+            - "traefik.http.middlewares.global-compress.compress=true"
+
+            # Secure dashboard with authentication
+            - "traefik.http.routers.traefik-dashboard.rule=Host(`${HOSTNAME}`) && PathPrefix(`/api`) || Host(`${HOSTNAME}`) && PathPrefix(`/dashboard`)"
+            - "traefik.http.routers.traefik-dashboard.middlewares=traefik-auth,global-security"
+            - "traefik.http.routers.traefik-dashboard.tls.certresolver=myresolver"
+            - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+            - "traefik.http.routers.traefik-dashboard.service=api@internal"
+
+            # Basic dashboard authentication
+            - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_USER}:${TRAEFIK_PASSWORD_HASH}"
+            - "traefik.http.middlewares.traefik-auth.basicauth.removeheader=true"
+
+            - "traefik.enable=true"
