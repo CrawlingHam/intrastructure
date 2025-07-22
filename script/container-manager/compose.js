@@ -1,7 +1,9 @@
 const { spawn } = require("child_process");
 const path = require("path");
 
-const FRONTEND_SERVICES = ["auth-app", "nav-react"];
+const NAVIGATIONBARS = ["nav-react", "nav-vue"];
+const FRONTEND_SERVICES = ["auth-app", "account", ...NAVIGATIONBARS];
+
 const BACKEND_SERVICES = ["auth-api", "gateway"];
 const SERVICES = [...FRONTEND_SERVICES, ...BACKEND_SERVICES];
 
@@ -24,8 +26,14 @@ function build(parentDir, services) {
             case "auth-app":
                 args.push("-f", path.join(parentDir, "frontend", "authentication.yaml"));
                 break;
+            case "account":
+                args.push("-f", path.join(parentDir, "frontend", "account.yaml"));
+                break;
             case "nav-react":
                 args.push("-f", path.join(parentDir, "frontend", "navigationbars", "react.yaml"));
+                break;
+            case "nav-vue":
+                args.push("-f", path.join(parentDir, "frontend", "navigationbars", "vue.yaml"));
                 break;
             case "gateway":
                 args.push("-f", path.join(parentDir, "backend", "gateway.yaml"));

@@ -1,0 +1,61 @@
+services:
+    navigationbar-vue:
+        container_name: navigationbar-vue
+        image: navigationbar-vue
+        mem_reservation: 256M
+        read_only: false
+        mem_limit: 512M
+        cpus: 1.0
+        build:
+            context: ../../frontend/navigationbars/vue
+            dockerfile: Dockerfile
+        networks:
+            - frontend-network
+            - traefik-network
+        healthcheck:
+            test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+            start_period: 10s
+            interval: 10s
+            timeout: 5s
+            retries: 3
+        labels:
+            # Enable Traefik
+            - "traefik.enable=true"
+
+            # Service
+            - "traefik.http.services.navigationbar-vue.loadbalancer.server.port=80"
+
+            # Path stripping middleware
+            - "traefik.http.middlewares.navigationbar-vue-stripprefix.stripprefix.prefixes=/navigationbar/vue"
+
+            # Static assets handling
+            - "traefik.http.routers.navigationbar-vue-assets.middlewares=navigationbar-vue-assets-stripprefix,navigationbar-vue-assets-cache,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.middlewares.navigationbar-vue-assets-cache.headers.customResponseHeaders.Cache-Control=no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+            - "traefik.http.routers.navigationbar-vue-assets.rule=Host(`${HOSTNAME}`) && PathPrefix(`/navigationbar/vue/assets/`)"
+            - "traefik.http.middlewares.navigationbar-vue-assets-stripprefix.stripprefix.prefixes=/navigationbar/vue"
+            - "traefik.http.routers.navigationbar-vue-assets.tls.certresolver=myresolver"
+            - "traefik.http.routers.navigationbar-vue-assets.entrypoints=websecure"
+            - "traefik.http.routers.navigationbar-vue-assets.tls=true"
+
+            # SPA fallback handling
+            - "traefik.http.routers.navigationbar-vue-spa.rule=Host(`${HOSTNAME}`) && PathPrefix(`/navigationbar/vue`) && !PathPrefix(`/navigationbar/vue/assets/`) && !Path(`/navigationbar/vue/health`)"
+            - "traefik.http.routers.navigationbar-vue-spa.middlewares=navigationbar-vue-spa-stripprefix,navigationbar-vue-spa-cache,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.middlewares.navigationbar-vue-spa-cache.headers.customResponseHeaders.Cache-Control=no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+            - "traefik.http.middlewares.navigationbar-vue-spa-stripprefix.stripprefix.prefixes=/navigationbar/vue"
+            - "traefik.http.routers.navigationbar-vue-spa.tls.certresolver=myresolver"
+            - "traefik.http.routers.navigationbar-vue-spa.entrypoints=websecure"
+            - "traefik.http.routers.navigationbar-vue-spa.tls=true"
+
+            # Health check endpoint with proper Content-Type
+            - "traefik.http.routers.navigationbar-vue-health.middlewares=navigationbar-vue-health-stripprefix,navigationbar-vue-health-headers,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.middlewares.navigationbar-vue-health-headers.headers.customResponseHeaders.Content-Type=text/plain"
+            - "traefik.http.routers.navigationbar-vue-health.rule=Host(`${HOSTNAME}`) && Path(`/navigationbar/vue/health`)"
+            - "traefik.http.middlewares.navigationbar-vue-health-stripprefix.stripprefix.prefixes=/navigationbar/vue"
+            - "traefik.http.routers.navigationbar-vue-health.tls.certresolver=myresolver"
+            - "traefik.http.routers.navigationbar-vue-health.entrypoints=web"
+            - "traefik.http.routers.navigationbar-vue-health.tls=true"
+
+            # Enhanced compression with specific MIME types
+            - "traefik.http.middlewares.navigationbar-vue-compress.compress.includedcontenttypes=text/plain,text/css,text/xml,application/json,application/javascript,application/xml+rss,application/atom+xml,image/svg+xml"
+            - "traefik.http.middlewares.navigationbar-vue-compress.compress.excludedcontenttypes=text/event-stream"
+            - "traefik.http.middlewares.navigationbar-vue-compress.compress=true"

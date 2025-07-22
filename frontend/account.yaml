@@ -1,0 +1,63 @@
+services:
+    account-app:
+        container_name: account-app
+        image: account-app
+        mem_reservation: 256M
+        read_only: true
+        mem_limit: 512M
+        cpus: 1.0
+        build:
+            context: ../../frontend/account
+            dockerfile: Dockerfile
+            args:
+                - HOSTNAME=${HOSTNAME}
+        networks:
+            - frontend-network
+            - traefik-network
+        healthcheck:
+            test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+            start_period: 10s
+            interval: 10s
+            timeout: 5s
+            retries: 3
+        labels:
+            # Enable Traefik
+            - "traefik.enable=true"
+
+            # Service
+            - "traefik.http.services.account-app.loadbalancer.server.port=80"
+
+            # Path stripping middleware
+            - "traefik.http.middlewares.account-app-stripprefix.stripprefix.prefixes=/account"
+
+            # Static assets handling
+            - "traefik.http.routers.account-app-assets.middlewares=account-app-assets-stripprefix,account-app-assets-cache,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.middlewares.account-app-assets-cache.headers.customResponseHeaders.Cache-Control=no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+            - "traefik.http.routers.account-app-assets.rule=Host(`${HOSTNAME}`) && PathPrefix(`/account/assets/`)"
+            - "traefik.http.middlewares.account-app-assets-stripprefix.stripprefix.prefixes=/account"
+            - "traefik.http.routers.account-app-assets.tls.certresolver=myresolver"
+            - "traefik.http.routers.account-app-assets.entrypoints=websecure"
+            - "traefik.http.routers.account-app-assets.tls=true"
+
+            # SPA fallback handling
+            - "traefik.http.routers.account-app-spa.middlewares=account-app-spa-stripprefix,account-app-spa-cache,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.middlewares.account-app-spa-cache.headers.customResponseHeaders.Cache-Control=no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+            - "traefik.http.routers.account-app-spa.rule=Host(`${HOSTNAME}`) && PathPrefix(`/account`) && !PathPrefix(`/account/assets/`) && !Path(`/account/health`)"
+            - "traefik.http.middlewares.account-app-spa-stripprefix.stripprefix.prefixes=/account"
+            - "traefik.http.routers.account-app-spa.tls.certresolver=myresolver"
+            - "traefik.http.routers.account-app-spa.entrypoints=websecure"
+            - "traefik.http.routers.account-app-spa.tls=true"
+
+            # Health check endpoint with proper Content-Type
+            - "traefik.http.routers.account-app-health.middlewares=account-app-health-stripprefix,account-app-health-headers,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.middlewares.account-app-health-headers.headers.customResponseHeaders.Content-Type=text/plain"
+            - "traefik.http.routers.account-app-health.rule=Host(`${HOSTNAME}`) && Path(`/account/health`)"
+            - "traefik.http.middlewares.account-app-health-stripprefix.stripprefix.prefixes=/account"
+            - "traefik.http.routers.account-app-health.tls.certresolver=myresolver"
+            - "traefik.http.routers.account-app-health.entrypoints=web"
+            - "traefik.http.routers.account-app-health.tls=true"
+
+            # Enhanced compression with specific MIME types
+            - "traefik.http.middlewares.account-app-compress.compress.includedcontenttypes=text/plain,text/css,text/xml,application/json,application/javascript,application/xml+rss,application/atom+xml,image/svg+xml"
+            - "traefik.http.middlewares.account-app-compress.compress.excludedcontenttypes=text/event-stream"
+            - "traefik.http.middlewares.account-app-compress.compress=true"
