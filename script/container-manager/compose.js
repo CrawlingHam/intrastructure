@@ -2,7 +2,7 @@ const { spawn } = require("child_process");
 const path = require("path");
 
 const NAVIGATIONBARS = ["nav-react", "nav-vue"];
-const FRONTEND_SERVICES = ["auth-app", "account", "media", ...NAVIGATIONBARS];
+const FRONTEND_SERVICES = ["auth-app", "account", "media", "music", ...NAVIGATIONBARS];
 
 const BACKEND_SERVICES = ["auth-api", "gateway"];
 const SERVICES = [...FRONTEND_SERVICES, ...BACKEND_SERVICES];
@@ -43,6 +43,9 @@ function build(parentDir, services) {
                 break;
             case "auth-api":
                 args.push("-f", path.join(parentDir, "backend", "authentication.yaml"));
+                break;
+            case "music":
+                args.push("-f", path.join(parentDir, "backend", "music.yaml"));
                 break;
             default:
                 throw new Error(`Unknown service '${service}'`);
