@@ -1,0 +1,63 @@
+services:
+    viviburst:
+        container_name: viviburst
+        image: viviburst
+        mem_reservation: 256M
+        read_only: true
+        mem_limit: 512M
+        cpus: 1.0
+        build:
+            context: ../../frontend/viviburst
+            dockerfile: Dockerfile
+            args:
+                - HOSTNAME=${HOSTNAME}
+        networks:
+            - frontend-network
+            - traefik-network
+        healthcheck:
+            test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+            start_period: 10s
+            interval: 10s
+            timeout: 5s
+            retries: 3
+        labels:
+            # Enable Traefik
+            - "traefik.enable=true"
+
+            # Service
+            - "traefik.http.services.viviburst.loadbalancer.server.port=80"
+
+            # Path stripping middleware
+            - "traefik.http.middlewares.viviburst-stripprefix.stripprefix.prefixes=/viviburst"
+
+            # Static assets handling
+            - "traefik.http.routers.viviburst-assets.middlewares=viviburst-assets-stripprefix,viviburst-assets-cache,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.middlewares.viviburst-assets-cache.headers.customResponseHeaders.Cache-Control=no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+            - "traefik.http.routers.viviburst-assets.rule=Host(`${HOSTNAME}`) && PathPrefix(`/viviburst/assets/`)"
+            - "traefik.http.middlewares.viviburst-assets-stripprefix.stripprefix.prefixes=/viviburst"
+            - "traefik.http.routers.viviburst-assets.tls.certresolver=myresolver"
+            - "traefik.http.routers.viviburst-assets.entrypoints=websecure"
+            - "traefik.http.routers.viviburst-assets.tls=true"
+
+            # SPA fallback handling
+            - "traefik.http.routers.viviburst-spa.middlewares=viviburst-spa-stripprefix,viviburst-spa-cache,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.middlewares.viviburst-spa-cache.headers.customResponseHeaders.Cache-Control=no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+            - "traefik.http.routers.viviburst-spa.rule=Host(`${HOSTNAME}`) && PathPrefix(`/viviburst`) && !PathPrefix(`/viviburst/assets/`) && !Path(`/viviburst/health`)"
+            - "traefik.http.middlewares.viviburst-spa-stripprefix.stripprefix.prefixes=/viviburst"
+            - "traefik.http.routers.viviburst-spa.tls.certresolver=myresolver"
+            - "traefik.http.routers.viviburst-spa.entrypoints=websecure"
+            - "traefik.http.routers.viviburst-spa.tls=true"
+
+            # Health check endpoint with proper Content-Type
+            - "traefik.http.routers.viviburst-health.middlewares=viviburst-health-stripprefix,viviburst-health-headers,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.middlewares.viviburst-health-headers.headers.customResponseHeaders.Content-Type=text/plain"
+            - "traefik.http.routers.viviburst-health.rule=Host(`${HOSTNAME}`) && Path(`/viviburst/health`)"
+            - "traefik.http.middlewares.viviburst-health-stripprefix.stripprefix.prefixes=/viviburst"
+            - "traefik.http.routers.viviburst-health.tls.certresolver=myresolver"
+            - "traefik.http.routers.viviburst-health.entrypoints=web"
+            - "traefik.http.routers.viviburst-health.tls=true"
+
+            # Enhanced compression with specific MIME types
+            - "traefik.http.middlewares.viviburst-compress.compress.includedcontenttypes=text/plain,text/css,text/xml,application/json,application/javascript,application/xml+rss,application/atom+xml,image/svg+xml"
+            - "traefik.http.middlewares.viviburst-compress.compress.excludedcontenttypes=text/event-stream"
+            - "traefik.http.middlewares.viviburst-compress.compress=true"

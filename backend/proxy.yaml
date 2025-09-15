@@ -4,12 +4,12 @@ services:
             # Backend-specific security headers
             - "traefik.http.middlewares.backend-security.headers.customrequestheaders.X-Gateway-Verified=true"
 
-            # Backend rate limiting (stricter for APIs)
-            - "traefik.http.middlewares.backend-rate-limit.ratelimit.average=30"
-            - "traefik.http.middlewares.backend-rate-limit.ratelimit.burst=15"
+            # Backend rate limiting
+            - "traefik.http.middlewares.backend-rate-limit.ratelimit.average=200"
+            - "traefik.http.middlewares.backend-rate-limit.ratelimit.burst=100"
             - "traefik.http.middlewares.backend-rate-limit.ratelimit.period=1s"
 
-            # Backend CORS (more restrictive for APIs)
+            # Backend CORS
             - "traefik.http.middlewares.backend-cors.headers.accesscontrolallowheaders=Content-Type,Authorization,X-Requested-With,X-Gateway-Verified"
             - "traefik.http.middlewares.backend-cors.headers.accesscontrolallowmethods=GET,POST,PUT,DELETE,OPTIONS"
             - "traefik.http.middlewares.backend-cors.headers.accesscontrolalloworiginlist=${DOMAIN}"

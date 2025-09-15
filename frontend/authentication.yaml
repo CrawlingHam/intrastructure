@@ -31,7 +31,7 @@ services:
             - "traefik.http.middlewares.authentication-app-stripprefix.stripprefix.prefixes=/auth"
 
             # Static assets handling
-            - "traefik.http.routers.authentication-app-assets.middlewares=authentication-app-assets-stripprefix,authentication-app-assets-cache,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.routers.authentication-app-assets.middlewares=authentication-app-assets-stripprefix,authentication-app-assets-cache,global-security,frontend-rate-limit-authentication@docker,timeout,global-compress"
             - "traefik.http.middlewares.authentication-app-assets-cache.headers.customResponseHeaders.Cache-Control=no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
             - "traefik.http.routers.authentication-app-assets.rule=Host(`${HOSTNAME}`) && PathPrefix(`/auth/assets/`)"
             - "traefik.http.middlewares.authentication-app-assets-stripprefix.stripprefix.prefixes=/auth"
@@ -40,7 +40,7 @@ services:
             - "traefik.http.routers.authentication-app-assets.tls=true"
 
             # SPA fallback handling
-            - "traefik.http.routers.authentication-app-spa.middlewares=authentication-app-spa-stripprefix,authentication-app-spa-cache,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.routers.authentication-app-spa.middlewares=authentication-app-spa-stripprefix,authentication-app-spa-cache,global-security,frontend-rate-limit-authentication@docker,timeout,global-compress"
             - "traefik.http.middlewares.authentication-app-spa-cache.headers.customResponseHeaders.Cache-Control=no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
             - "traefik.http.routers.authentication-app-spa.rule=Host(`${HOSTNAME}`) && PathPrefix(`/auth`) && !PathPrefix(`/auth/assets/`) && !Path(`/auth/health`)"
             - "traefik.http.middlewares.authentication-app-spa-stripprefix.stripprefix.prefixes=/auth"
@@ -49,7 +49,7 @@ services:
             - "traefik.http.routers.authentication-app-spa.tls=true"
 
             # Health check endpoint with proper Content-Type
-            - "traefik.http.routers.authentication-app-health.middlewares=authentication-app-health-stripprefix,authentication-app-health-headers,global-security,frontend-rate-limit@docker,timeout,global-compress"
+            - "traefik.http.routers.authentication-app-health.middlewares=authentication-app-health-stripprefix,authentication-app-health-headers,global-security,frontend-rate-limit-authentication@docker,timeout,global-compress"
             - "traefik.http.middlewares.authentication-app-health-headers.headers.customResponseHeaders.Content-Type=text/plain"
             - "traefik.http.routers.authentication-app-health.rule=Host(`${HOSTNAME}`) && Path(`/auth/health`)"
             - "traefik.http.middlewares.authentication-app-health-stripprefix.stripprefix.prefixes=/auth"

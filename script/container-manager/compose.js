@@ -2,9 +2,9 @@ const { spawn } = require("child_process");
 const path = require("path");
 
 const NAVIGATIONBARS = ["nav-react", "nav-vue"];
-const FRONTEND_SERVICES = ["auth-app", "account", "media", "music", ...NAVIGATIONBARS];
+const FRONTEND_SERVICES = ["auth-app", "account", "viviburst", ...NAVIGATIONBARS];
 
-const BACKEND_SERVICES = ["auth-api", "gateway"];
+const BACKEND_SERVICES = ["gateway", "auth-api", "media", "music"];
 const SERVICES = [...FRONTEND_SERVICES, ...BACKEND_SERVICES];
 
 function build(parentDir, services) {
@@ -23,6 +23,18 @@ function build(parentDir, services) {
 
     for (const service of servicesToInclude) {
         switch (service) {
+            case "gateway":
+                args.push("-f", path.join(parentDir, "backend", "gateway.yaml"));
+                break;
+            case "auth-api":
+                args.push("-f", path.join(parentDir, "backend", "authentication.yaml"));
+                break;
+            case "music":
+                args.push("-f", path.join(parentDir, "backend", "music.yaml"));
+                break;
+            case "media":
+                args.push("-f", path.join(parentDir, "backend", "media.yaml"));
+                break;
             case "auth-app":
                 args.push("-f", path.join(parentDir, "frontend", "authentication.yaml"));
                 break;
@@ -32,20 +44,11 @@ function build(parentDir, services) {
             case "nav-react":
                 args.push("-f", path.join(parentDir, "frontend", "navigationbars", "react.yaml"));
                 break;
-            case "media":
-                args.push("-f", path.join(parentDir, "backend", "media.yaml"));
+            case "viviburst":
+                args.push("-f", path.join(parentDir, "frontend", "viviburst.yaml"));
                 break;
             case "nav-vue":
                 args.push("-f", path.join(parentDir, "frontend", "navigationbars", "vue.yaml"));
-                break;
-            case "gateway":
-                args.push("-f", path.join(parentDir, "backend", "gateway.yaml"));
-                break;
-            case "auth-api":
-                args.push("-f", path.join(parentDir, "backend", "authentication.yaml"));
-                break;
-            case "music":
-                args.push("-f", path.join(parentDir, "backend", "music.yaml"));
                 break;
             default:
                 throw new Error(`Unknown service '${service}'`);

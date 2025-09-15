@@ -12,6 +12,7 @@ services:
                 - MAINTAINER=${EMAIL}
         environment:
             - REDIS_CREDENTIALS_PATH=/run/secrets/redis_credentials
+            - AUTH_API=http://authentication-api:8000
             - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
             - ALLOWED_ORIGINS=api.${HOSTNAME}
             - COMPANY_NAME=${COMPANY_NAME}
