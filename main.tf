@@ -12,11 +12,3 @@ terraform {
         # Backend configuration is passed via -backend-config in workflow
     }
 }
-
-locals {
-    common_tags = {
-        Environment = var.environment
-        Project = var.project_name
-        ManagedBy = var.managed_by
-    }
-}
