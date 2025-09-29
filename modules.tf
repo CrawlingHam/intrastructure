@@ -58,3 +58,10 @@ module "alb" {
 
     depends_on                  = [module.iam]
 }
+
+module "ecs" {
+    project_name = var.project_name
+    environment = var.environment
+    managed_by = var.managed_by
+    source = "./ecs"
+}
