@@ -1,9 +1,16 @@
-variable "project_name" {}
-variable "environment" {}
-variable "region" {}
+variable "project_name" {
+    type = string
+}
+
+variable "environment" {
+    type = string
+}
+
+variable "region" {
+    type = string
+}
 
 variable "common_tags" {
-    description = "Common tags to apply to all resources"
     type        = map(string)
     default     = {}
 }
