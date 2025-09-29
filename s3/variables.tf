@@ -9,3 +9,7 @@ variable "environment" {
 variable "managed_by" {
     type = string
 }
+
+variable "region" {
+    type = string
+}

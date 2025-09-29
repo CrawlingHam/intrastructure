@@ -1,8 +1,22 @@
-variable "public_hosted_zone_domain" {}
-variable "public_hosted_zone_name" {}
-variable "project_name" {}
-variable "environment" {}
-variable "managed_by" {}
+variable "project_name" {
+    type = string
+}
+
+variable "environment" {
+    type = string
+}
+
+variable "managed_by" {
+    type = string
+}
+
+variable "public_hosted_zone_domain" {
+    type = string
+}
+
+variable "public_hosted_zone_name" {
+    type = string
+}
 
 locals {
     common_tags = {

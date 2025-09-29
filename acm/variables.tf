@@ -1,15 +1,21 @@
-variable "project_name" {}
-variable "environment" {}
-variable "managed_by" {}
+variable "project_name" {
+    type = string
+}
+
+variable "environment" {
+    type = string
+}
+
+variable "managed_by" {
+    type = string
+}
 
 variable "route53_acm_domain_name" {
-    description = "The domain name for the flixburst SSL certificate"
-    type        = string
+    type = string
 }
 
 variable "route53_acm_zone_id" {
-    description = "The Route 53 hosted zone ID for flixburst certificate validation"
-    type        = string
+    type = string
 }
 
 locals {
