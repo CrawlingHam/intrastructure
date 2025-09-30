@@ -52,9 +52,12 @@ module "route_tables" {
 }
 
 module "security_groups" {
+    alb_cidr_blocks = var.alb_cidr_blocks
+    common_tags = local.common_tags
     project_name = var.project_name
     environment  = var.environment
     managed_by   = var.managed_by
     source = "./security_groups"
-    vpc_id = aws_vpc.main.id
+    vpc_id = aws_vpc.main.id 
+
 }

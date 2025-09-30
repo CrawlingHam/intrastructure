@@ -1,13 +1,9 @@
-variable "project_name" {
-    type = string
-}
-
 variable "environment" {
     type = string
 }
 
-variable "managed_by" {
-    type = string
+variable "common_tags" {
+    type = map(string)
 }
 
 variable "vpc_id" {
@@ -16,8 +12,4 @@ variable "vpc_id" {
 
 variable "alb_cidr_blocks" {
     type = list(string)
-}
-
-variable "common_tags" {
-    type = map(string)
 }

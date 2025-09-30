@@ -30,6 +30,12 @@ variable "private_subnet_cidrs" {
     type        = list(string)
 }
 
+variable "alb_cidr_blocks" {
+    description = "CIDR blocks for frontend ALB security groups"
+    default = ["0.0.0.0/0"]
+    type = list(string)
+}
+
 locals {
     common_tags = {
         Environment = var.environment

@@ -5,3 +5,11 @@ module "alb" {
     vpc_id = var.vpc_id
     source = "./alb"
 }
+
+module "ecs" {
+    alb_cidr_blocks = var.alb_cidr_blocks
+    environment = var.environment
+    common_tags = var.common_tags
+    vpc_id = var.vpc_id
+    source = "./ecs"
+}
