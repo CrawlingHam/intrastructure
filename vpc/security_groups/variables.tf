@@ -21,3 +21,11 @@ variable "alb_cidr_blocks" {
 variable "common_tags" {
     type = map(string)
 }
+
+variable "ecs_fargate_ingress_from_port" {
+    type = number
+}
+
+variable "ecs_fargate_ingress_to_port" {
+    type = number
+}

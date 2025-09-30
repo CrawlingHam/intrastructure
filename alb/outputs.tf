@@ -13,3 +13,11 @@ output "frontend_alb_dns_name" {
 output "frontend_alb_zone_id" {
     value = module.frontend_alb.alb_zone_id
 }
+
+output "backend_alb_target_port" {
+    value = module.backend_alb.target_groups.target_port
+}
+
+output "frontend_alb_target_port" {
+    value = module.frontend_alb.target_groups.target_port
+}

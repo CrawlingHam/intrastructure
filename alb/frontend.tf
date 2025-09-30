@@ -1,5 +1,6 @@
 module "frontend_alb" {
     security_group_id   = var.frontend_security_group_id
+    target_port         = var.frontend_alb_target_port
     enable_access_logs  = var.enable_access_logs
     access_logs_bucket  = var.access_logs_bucket
     public_subnet_ids   = var.public_subnet_ids
@@ -11,5 +12,4 @@ module "frontend_alb" {
     vpc_id              = var.vpc_id
     source              = "./shared"
     alb_name            = "frontend"
-    target_port         = 3000
 }

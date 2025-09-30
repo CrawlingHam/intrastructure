@@ -40,6 +40,14 @@ variable "enable_access_logs" {
     default = false
 }
 
+variable "backend_alb_target_port" {
+    type = number
+}
+
+variable "frontend_alb_target_port" {
+    type = number
+}
+
 locals {
     common_tags = {
         Environment = var.environment

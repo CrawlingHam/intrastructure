@@ -7,6 +7,8 @@ module "alb" {
 }
 
 module "ecs" {
+    ecs_fargate_ingress_from_port = var.ecs_fargate_ingress_from_port
+    ecs_fargate_ingress_to_port = var.ecs_fargate_ingress_to_port
     alb_cidr_blocks = var.alb_cidr_blocks
     environment = var.environment
     common_tags = var.common_tags

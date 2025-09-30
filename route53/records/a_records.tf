@@ -1,5 +1,5 @@
 resource "aws_route53_record" "frontend_alb_a_record" {
-    name    = "www.${var.hosted_zone_name}"
+    name    = var.hosted_zone_name
     zone_id = var.hosted_zone_id
     type    = "A"
     

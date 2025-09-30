@@ -1,5 +1,6 @@
 module "backend_alb" {
     security_group_id   = var.backend_security_group_id
+    target_port         = var.backend_alb_target_port
     enable_access_logs  = var.enable_access_logs
     access_logs_bucket  = var.access_logs_bucket
     public_subnet_ids   = var.public_subnet_ids
@@ -11,5 +12,4 @@ module "backend_alb" {
     vpc_id              = var.vpc_id
     source              = "./shared"
     alb_name            = "backend"
-    target_port         = 3000
 }

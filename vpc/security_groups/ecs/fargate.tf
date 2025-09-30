@@ -4,10 +4,10 @@ resource "aws_security_group" "ecs_fargate" {
     vpc_id      = var.vpc_id
 
     ingress {
+        from_port   = var.ecs_fargate_ingress_from_port
+        to_port     = var.ecs_fargate_ingress_to_port
         cidr_blocks = var.alb_cidr_blocks
         description = "HTTP from ALB"
-        from_port   = 3000
-        to_port     = 3000
         protocol    = "tcp"
     }
 

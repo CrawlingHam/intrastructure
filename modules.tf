@@ -24,7 +24,7 @@ module "route53" {
     environment  = var.environment
     managed_by   = var.managed_by
     source       = "./route53"
-    alb_module = module.alb
+    alb_module = module.alb 
 }
 
 module "acm" {
@@ -37,6 +37,8 @@ module "acm" {
 }
 
 module "vpc" {
+    ecs_fargate_ingress_from_port = var.frontend_alb_target_port
+    ecs_fargate_ingress_to_port = var.frontend_alb_target_port
     project_name = var.project_name
     environment  = var.environment
     managed_by   = var.managed_by
@@ -49,14 +51,15 @@ module "alb" {
     access_logs_bucket          = module.s3.logs.alb_access_logs_bucket_id
     public_subnet_ids           = module.vpc.subnets.public_subnet_ids
     certificate_arn             = module.acm.route53_certificate_arn
+    frontend_alb_target_port    = var.frontend_alb_target_port
+    backend_alb_target_port     = var.backend_alb_target_port
     vpc_id                      = module.vpc.vpc_id
     project_name                = var.project_name
     environment                 = var.environment
     managed_by                  = var.managed_by
+    depends_on                  = [module.iam]
     source                      = "./alb"
     enable_access_logs          = true
-
-    depends_on                  = [module.iam]
 }
 
 module "ecs" {

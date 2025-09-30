@@ -36,6 +36,14 @@ variable "alb_cidr_blocks" {
     type = list(string)
 }
 
+variable "ecs_fargate_ingress_from_port" {
+    type = number
+}
+
+variable "ecs_fargate_ingress_to_port" {
+    type = number
+}
+
 locals {
     common_tags = {
         Environment = var.environment

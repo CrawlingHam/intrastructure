@@ -52,6 +52,8 @@ module "route_tables" {
 }
 
 module "security_groups" {
+    ecs_fargate_ingress_from_port = var.ecs_fargate_ingress_from_port
+    ecs_fargate_ingress_to_port = var.ecs_fargate_ingress_to_port
     alb_cidr_blocks = var.alb_cidr_blocks
     common_tags = local.common_tags
     project_name = var.project_name
@@ -59,5 +61,5 @@ module "security_groups" {
     managed_by   = var.managed_by
     source = "./security_groups"
     vpc_id = aws_vpc.main.id 
-
 }
+ 
